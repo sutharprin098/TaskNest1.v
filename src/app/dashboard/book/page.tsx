@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 
@@ -14,7 +14,7 @@ interface Service {
   description?: string;
 }
 
-export default function BookServicePage() {
+function BookServiceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [services, setServices] = useState<Service[]>([]);
@@ -621,5 +621,13 @@ export default function BookServicePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function BookServicePage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+      <BookServiceContent />
+    </Suspense>
   );
 }
