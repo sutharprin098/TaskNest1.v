@@ -1,0 +1,200 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  WORKER
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum ServiceType {
+  HOME_COOKING
+  EVENT_COOKING
+  HOME_ORGANIZATION
+  SEASONAL_CONCIERGE
+  CUSTOM_COOKING
+}
+
+enum WorkerStatus {
+  ACTIVE
+  INACTIVE
+  VERIFIED
+  SUSPENDED
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String
+  password  String
+  phone     String?
+  address   String?
+  city      String     @default("Dubai")
+  role      UserRole   @default(CUSTOMER)
+  isActive  Boolean    @default(true)
+  
+  // Relations
+  bookings  Booking[]
+  payments  Payment[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("users")
+}
+
+model Worker {
+  id              String       @id @default(cuid())
+  name            String
+  email           String       @unique
+  phone           String
+  serviceType     ServiceType[]
+  hourlyRate      Float
+  status          WorkerStatus @default(INACTIVE)
+  bio             String?
+  
+  // Documents
+  idDocument      String?      // Path to ID/Passport
+  certifications  String?      // JSON array of certification URLs
+  bankDetails     String?      // Encrypted bank details
+  
+  // Ratings
+  avgRating       Float        @default(5.0)
+  totalReviews    Int          @default(0)
+  
+  // Relations
+  bookings        Booking[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("workers")
+}
+
+model Service {
+  id              String       @id @default(cuid())
+  name            String       @unique
+  type            ServiceType  @unique
+  description     String
+  longDescription String?
+  startingPrice   Float
+  image           String?
+  
+  // What's included/excluded
+  included        String?      // JSON array
+  excluded        String?      // JSON array
+  
+  // Relations
+  bookings        Booking[]
+  pricings        Pricing[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("services")
+}
+
+model Pricing {
+  id              String       @id @default(cuid())
+  serviceId       String
+  service         Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  tier            String       // "hourly", "per_guest", "package"
+  price           Float
+  description     String?
+  minHours        Int?
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("pricings")
+}
+
+model Booking {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  serviceId       String
+  service         Service      @relation(fields: [serviceId], references: [id])
+  
+  workerId        String?
+  worker          Worker?      @relation(fields: [workerId], references: [id])
+  
+  date            DateTime
+  duration        Int          // in hours
+  guestCount      Int?         // for event cooking
+  address         String
+  notes           String?
+  status          BookingStatus @default(PENDING)
+  
+  // Pricing
+  basePrice       Float
+  discountPercent Float        @default(0)
+  finalPrice      Float
+  
+  // Payment relation
+  payment         Payment?
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("bookings")
+}
+
+model Payment {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  bookingId       String       @unique
+  booking         Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  amount          Float
+  currency        String       @default("AED")
+  status          PaymentStatus @default(PENDING)
+  
+  // Payment method
+  paymentMethod   String?      // "card", "wallet", "bank_transfer"
+  transactionId   String?      // External payment gateway transaction ID
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("payments")
+}
+
+model Review {
+  id              String       @id @default(cuid())
+  bookingId       String       @unique
+  userId          String
+  workerId        String
+  
+  rating          Int          // 1-5
+  comment         String?
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("reviews")
+}

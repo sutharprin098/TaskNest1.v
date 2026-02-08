@@ -1,0 +1,165 @@
+// PostgreSQL Prisma schema for TaskNest (Production)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String
+  password  String
+  phone     String?
+  address   String?
+  city      String     @default("Delhi")
+  role      String     @default("CUSTOMER")
+  isActive  Boolean    @default(true)
+  
+  // Relations
+  bookings  Booking[]
+  payments  Payment[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("users")
+}
+
+model Worker {
+  id              String       @id @default(cuid())
+  name            String
+  email           String       @unique
+  phone           String
+  serviceType     String       // JSON array
+  hourlyRate      Float
+  status          String       @default("INACTIVE")
+  bio             String?
+  
+  // Documents
+  idDocument      String?
+  certifications  String?
+  bankDetails     String?
+  
+  // Ratings
+  avgRating       Float        @default(5.0)
+  totalReviews    Int          @default(0)
+  
+  // Relations
+  bookings        Booking[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("workers")
+}
+
+model Service {
+  id              String       @id @default(cuid())
+  name            String       @unique
+  type            String       @unique
+  description     String
+  longDescription String?
+  startingPrice   Float
+  image           String?
+  
+  // What's included/excluded
+  included        String?
+  excluded        String?
+  
+  // Relations
+  bookings        Booking[]
+  pricings        Pricing[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("services")
+}
+
+model Pricing {
+  id              String       @id @default(cuid())
+  serviceId       String
+  service         Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  tier            String
+  price           Float
+  description     String?
+  minHours        Int?
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("pricings")
+}
+
+model Booking {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  serviceId       String
+  service         Service      @relation(fields: [serviceId], references: [id])
+  
+  workerId        String?
+  worker          Worker?      @relation(fields: [workerId], references: [id])
+  
+  date            DateTime
+  time            String       // Time slot (e.g., "09:00 AM")
+  duration        Int
+  guestCount      Int?
+  address         String
+  notes           String?
+  status          String       @default("PENDING")
+  
+  // Pricing
+  basePrice       Float
+  discountPercent Float        @default(0)
+  finalPrice      Float
+  
+  // Payment relation
+  payment         Payment?
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("bookings")
+}
+
+model Payment {
+  id              String       @id @default(cuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  bookingId       String       @unique
+  booking         Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  amount          Float
+  currency        String       @default("AED")
+  status          String       @default("PENDING")
+  
+  // Payment method
+  paymentMethod   String?
+  transactionId   String?
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("payments")
+}
+
+model Review {
+  id              String       @id @default(cuid())
+  bookingId       String       @unique
+  userId          String
+  workerId        String
+  
+  rating          Int
+  comment         String?
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@map("reviews")
+}

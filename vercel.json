@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "JWT_SECRET": "@jwt_secret",
+    "NEXT_PUBLIC_DOMAIN": "tasknest.princesite.in",
+    "NEXT_PUBLIC_ADMIN_DOMAIN": "tasknest.princesite.in"
+  }
+}
+
