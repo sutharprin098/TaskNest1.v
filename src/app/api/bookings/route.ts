@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
         userId: payload.userId,
         serviceId,
         date: dateObj,
+        time,
         duration,
         guestCount: guestCount || null,
         address,
