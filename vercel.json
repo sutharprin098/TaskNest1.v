@@ -7,7 +7,6 @@
     }
   ],
   "env": {
-    "JWT_SECRET": "@jwt_secret",
     "NEXT_PUBLIC_DOMAIN": "tasknest.princesite.in",
     "NEXT_PUBLIC_ADMIN_DOMAIN": "tasknest.princesite.in"
   }
